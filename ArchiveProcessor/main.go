@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type Author struct {
@@ -196,6 +197,11 @@ func main() {
 		panic(err)
 	}
 
+	const maxGoroutines = 8
+	goroutineSem := make(chan struct{}, maxGoroutines)
+
+	var wg sync.WaitGroup
+
 	zipFiles, err := filepath.Glob(filepath.Join(dir, "*.zip"))
 	if err != nil {
 		panic(err)
@@ -203,7 +209,6 @@ func main() {
 
 	log.Println("Found", len(zipFiles), "zip files")
 
-	// Iterate over the files in the dsirectory.
 	for _, file := range zipFiles {
 		fmt.Println(file)
 
@@ -213,32 +218,40 @@ func main() {
 		}
 
 		zippedFb2Files := r.File
-
 		fmt.Printf("Reading data from %s\n", file)
-		bar := pb.New(len(zippedFb2Files)) // Set the total count of the progress bar
+		bar := pb.New(len(zippedFb2Files))
+
 		for _, fb2 := range zippedFb2Files {
-			d, err := ExtractBook(fb2)
-			if err != nil {
-				log.Printf("Error extracting book %s/%s: %+v\n", file, fb2.Name, err)
-				continue // or continue, or anything else
-			}
-			d.ID = fmt.Sprintf("%s/%s", file, d.ID)
+			goroutineSem <- struct{}{} // Wait for an available slot
+			wg.Add(1)
 
-			jsdata, err := json.Marshal(d)
-			if err != nil {
-				log.Printf("Error marshalling data %+v\n", err)
-				continue
-			}
+			go func(fb2 *zip.File) {
+				defer wg.Done()
 
-			f.Write(jsdata)
-			f.WriteString("\n")
-			bar.Add(1)
+				d, err := ExtractBook(fb2)
+				if err != nil {
+					log.Printf("Error extracting book %s/%s: %+v\n", file, fb2.Name, err)
+				} else {
+					d.ID = fmt.Sprintf("%s/%s", file, d.ID)
+					jsdata, err := json.Marshal(d)
+					if err != nil {
+						log.Printf("Error marshalling data %+v\n", err)
+					} else {
+						f.Write(jsdata)
+						f.WriteString("\n")
+						bar.Add(1)
+					}
+				}
+
+				<-goroutineSem // Release the slot
+			}(fb2)
 		}
 
-		// Close the progress bar.
 		bar.Finish()
+		r.Close()
 	}
 
-	// Close the HDF file.
+	wg.Wait() // Wait for all goroutines to complete
+
 	f.Close()
 }
