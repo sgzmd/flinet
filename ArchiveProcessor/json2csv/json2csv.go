@@ -50,7 +50,7 @@ func main() {
 
 	writer := csv.NewWriter(csvFile)
 	defer writer.Flush()
-	err = writer.Write([]string{"body", "genre"})
+	err = writer.Write([]string{"body", "genre"}) // Remove "annotation" from the header
 	if err != nil {
 		panic(err)
 	}
@@ -71,6 +71,11 @@ func main() {
 		if !ok {
 			log.Println("Error: body is not a string")
 			continue
+		}
+
+		annotation, ok := jsonObj["annotation"].(string) // Get the "annotation" field
+		if !ok {
+			annotation = "" // Set a default value if "annotation" is not present
 		}
 
 		words := strings.Fields(body)
@@ -94,7 +99,9 @@ func main() {
 			}
 		}
 
-		err = writer.Write([]string{body, strings.Join(genre, ",")})
+		bodyWithAnnotation := annotation + " " + body // Concatenate "annotation" with "body"
+
+		err = writer.Write([]string{bodyWithAnnotation, strings.Join(genre, ",")}) // Write the modified "body" with "annotation" and "genre"
 		if err != nil {
 			panic(err)
 		}

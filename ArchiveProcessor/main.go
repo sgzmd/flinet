@@ -5,19 +5,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"sync"
+
 	"github.com/anaskhan96/soup"
 	pb "github.com/schollz/progressbar/v3"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
-	"io"
-	"log"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
-	"sync"
 )
 
 type Author struct {
@@ -28,47 +26,16 @@ type Author struct {
 }
 
 type Data struct {
-	ID        string   `json:"id"`
-	Genres    []string `json:"genre"`
-	Authors   []Author `json:"author"`
-	BookTitle string   `json:"book_title"`
-	Body      string   `json:"body"`
-	FileName  string   `json:"file_name"`
+	ID         string   `json:"id"`
+	Genres     []string `json:"genre"`
+	Authors    []Author `json:"author"`
+	BookTitle  string   `json:"book_title"`
+	Body       string   `json:"body"`
+	Annotation string   `json:"annotation"`
+	FileName   string   `json:"file_name"`
 }
 
-const N = 2000
-
-func normalize(text string) string {
-	// Convert text to NFC form
-	return norm.NFC.String(text)
-}
-
-func tokenize(text string) []string {
-	// Regular expression to match words
-	// This regex might need refinement based on your specific needs
-	wordRegexp := regexp.MustCompile(`\p{L}+`)
-
-	return wordRegexp.FindAllString(text, -1)
-}
-
-func removePunctuation(text string) string {
-	// Regular expression to match punctuation
-	punctuationRegexp := regexp.MustCompile(`[\p{P}\p{S}]`)
-
-	return punctuationRegexp.ReplaceAllString(text, "")
-}
-
-func TokenizeAndStemText(s string, firstN int) string {
-	norm := normalize(s)
-	dp := removePunctuation(norm)
-	fields := tokenize(dp)
-
-	if len(fields) < firstN {
-		firstN = len(fields)
-	}
-	tokens := fields[:firstN]
-	return strings.Join(tokens, " ")
-}
+const N = 20000
 
 // TruncateText truncates text to firstN characters.
 func TruncateText(s string, firstN int) string {
@@ -119,6 +86,11 @@ func ExtractBook(fb2 *zip.File) (Data, error) {
 		d.Genres[i] = genre.Text()
 	}
 	d.ID = d.FileName
+
+	annotation := doc.FindAll("annotation")
+	if len(annotation) == 1 {
+		d.Annotation = annotation[0].FullText()
+	}
 
 	title := doc.FindAll("book-title")
 	if len(title) != 1 {
