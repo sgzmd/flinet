@@ -69,6 +69,14 @@ func TokenizeAndStemText(s string, firstN int) string {
 	return strings.Join(tokens, " ")
 }
 
+// TruncateText truncates text to firstN characters.
+func TruncateText(s string, firstN int) string {
+	if len(s) < firstN {
+		firstN = len(s)
+	}
+	return s[:firstN]
+}
+
 func ExtractBook(fb2 *zip.File) (Data, error) {
 	d := Data{}
 
@@ -123,8 +131,7 @@ func ExtractBook(fb2 *zip.File) (Data, error) {
 	}
 
 	text := body[0].FullText()
-	text = strings.ToLower(text)
-	d.Body = TokenizeAndStemText(text, N)
+	d.Body = TruncateText(text, N)
 
 	ti := doc.FindAll("title-info")
 	if len(ti) != 1 {
