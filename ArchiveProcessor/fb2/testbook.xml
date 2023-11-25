@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FictionBook xmlns:l="http://www.w3.org/1999/xlink" xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">
+    <description>
+        <title-info>
+            <genre>det_espionage</genre>
+            <genre>something_else</genre>
+            <author>
+                <first-name>Чингиз</first-name>
+                <middle-name>Акифович</middle-name>
+                <last-name>Абдуллаев</last-name>
+                <id>cabbab58-2a80-102a-9ae1-2dfe723fe7c7</id>
+            </author>
+
+            <author>
+                <first-name>Второй</first-name>
+                <middle-name>Автор</middle-name>
+                <last-name>Олегович</last-name>
+                <nick-name>Второй</nick-name>
+            </author>
+
+            <book-title>Второе рождение Венеры</book-title>
+            <annotation>
+                <p>Женщины коварны и непредсказуемы.
+                </p>
+            </annotation>
+            <date>2009</date>
+            <coverpage>
+                <image l:href="#cover.jpg"/>
+            </coverpage>
+            <lang>ru</lang>
+            <sequence name="seq1"/>
+            <sequence name="seq2"/>
+        </title-info>
+        <document-info>
+            <author>
+                <nickname>shum29</nickname>
+                <email>au.shum@gmail.com</email>
+            </author>
+            <program-used>FB Editor v2.0</program-used>
+            <date value="2009-11-20">20.11.2009</date>
+            <src-url>http://www.litres.ru</src-url>
+            <src-ocr>Издательский текст</src-ocr>
+            <id>fe3ab6f9-26a0-102d-8ff6-f64c971398c3</id>
+            <version>1.0</version>
+            <history>
+                <p>v 1.0 – создание fb2 – (shum29)</p>
+            </history>
+        </document-info>
+        <publish-info>
+            <book-name>Второе рождение Венеры</book-name>
+            <publisher>Эксмо</publisher>
+            <city>М.</city>
+            <year>2009</year>
+            <isbn>978-5-699-38513-3</isbn>
+        </publish-info>
+    </description>
+    <body>
+        <title>
+            <p>Чингиз Акифович Абдуллаев</p>
+            <p>Второе рождение Венеры</p>
+        </title>
+        <section>
+            <epigraph>
+                <p>«Женщина может иногда признаться в своих грехах, но я не знал ни одной, которая бы призналась в своих
+                    слабостях».
+                </p>
+                <text-author>Бернард Шоу</text-author>
+            </epigraph>
+            <epigraph>
+                <empty-line/>
+                <p>«Женщины вообще не могут быть абсолютно правдивыми. Они всем решительно лгут: судьям, своим
+                    любовникам, своим горничным и самим себе».
+                </p>
+                <text-author>Эмиль Золя</text-author>
+            </epigraph>
+            <epigraph>
+                <empty-line/>
+                <p>«В этом поразительном мире
+                </p>
+                <text-author>Али Эфенди</text-author>
+            </epigraph>
+            <empty-line/>
+        </section>
+        <section>
+            <title>
+                <p>Глава 1</p>
+            </title>
+            <p>На островах Мадейры всегда хорошая погода. Эти острова находятся гораздо ближе к Африканскому континенту,
+                чем к Европе, хотя и принадлежат уже много веков Португалии. Сюда любят приезжать на отдых богатые
+                туристы из Европы и Америки, наслаждаясь почти всегда приятной погодой, ярким солнцем и прохладным
+                бризом, дующим с Атлантического океана.
+            </p>
+            <p>Столица Мадейры – Фуншал находится на самом большом острове, который тоже называется Мадейра. Именно
+                здесь собрались три дня назад участники мировой конференции представителей женских организаций,
+                проводящих свою очередную встречу, посвященную проблемам гендерного равноправия, борьбе против
+                дискриминации женщин при их приеме на работу, оплате труда; участники конгресса даже рассматривали
+                сексуальные проблемы, неизбежно возникающие в любом коллективе, где трудятся представители разных полов.
+            </p>
+        </section>
+    </body>
+</FictionBook>
