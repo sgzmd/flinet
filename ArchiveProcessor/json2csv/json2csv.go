@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const maxCapacity = 5 * 1024 * 1024 * 1024
+
 var input string
 var output string
 var discardFirstWords int
@@ -49,6 +51,8 @@ func main() {
 	}
 
 	scanner := bufio.NewScanner(file)
+	buf := make([]byte, maxCapacity)
+	scanner.Buffer(buf, maxCapacity)
 	csvFile, err := os.Create(output)
 	if err != nil {
 		panic(err)
@@ -57,7 +61,7 @@ func main() {
 
 	writer := csv.NewWriter(csvFile)
 	defer writer.Flush()
-	err = writer.Write([]string{"body", "genre", "selected"}) // Remove "annotation" from the header
+	err = writer.Write([]string{"body", "genre", "selected", "file_name"}) // Remove "annotation" from the header
 	if err != nil {
 		panic(err)
 	}
@@ -125,7 +129,12 @@ func main() {
 
 		bodyWithAnnotation := annotation + " " + body // Concatenate "annotation" with "body"
 
-		err = writer.Write([]string{bodyWithAnnotation, strings.Join(genre, ","), isSelected}) // Write the modified "body" with "annotation" and "genre"
+		err = writer.Write([]string{
+			bodyWithAnnotation,
+			strings.Join(genre, ","),
+			isSelected,
+			fileName}) // Write the modified "body" with "annotation" and "genre"
+
 		if err != nil {
 			panic(err)
 		}
