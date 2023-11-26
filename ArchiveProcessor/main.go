@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,6 +82,22 @@ func ExtractBook(fb2 *zip.File) (Data, error) {
 	genres := doc.FindAll("genre")
 	if len(genres) == 0 {
 		return d, fmt.Errorf("no genres found")
+	}
+
+	hasSf := false
+	for _, genre := range genres {
+		if strings.HasPrefix(genre.Text(), "sf") {
+			hasSf = true
+			break
+		} else if genre.Text() == "popadanec" || genre.Text() == "litrpg" {
+			hasSf = true
+			break
+		}
+	}
+	if !hasSf {
+		if rand.Float32() < 0.75 {
+			return d, fmt.Errorf("random ignore")
+		}
 	}
 
 	d.Genres = make([]string, len(genres))
