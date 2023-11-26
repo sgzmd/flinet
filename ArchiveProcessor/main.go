@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/anaskhan96/soup"
@@ -35,10 +36,11 @@ type Data struct {
 	FileName   string   `json:"file_name"`
 }
 
-const N = 20000
+const N = 50000
 
 // TruncateText truncates text to firstN characters.
 func TruncateText(s string, firstN int) string {
+	s = strings.TrimSpace(s)
 	if len(s) < firstN {
 		firstN = len(s)
 	}
