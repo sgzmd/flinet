@@ -93,8 +93,21 @@ func main() {
 
 	positives := getFiles(positiveSamples)
 	negatives := getFiles(negativesSamples)
+
+	positiveMap := make(map[string]bool)
+	for _, v := range positives {
+		positiveMap[v+".fb2"] = true
+	}
+
+	negativeMap := make(map[string]bool)
+	for _, v := range negatives {
+		negativeMap[v+".fb2"] = true
+	}
+
 	bar := pb.New(-1)
 
+	numPositives := 0
+	numNegatives := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		bar.Add(1)
@@ -126,20 +139,14 @@ func main() {
 		}
 
 		isSelected := "0"
-		for _, v := range positives {
-			if v+".fb2" == fileName {
-				log.Printf("Positive: %s", fileName)
-				isSelected = "1"
-				break
-			}
-		}
-
-		for _, v := range negatives {
-			if v+".fb2" == fileName {
-				log.Printf("Negative: %s", fileName)
-				isSelected = "-1"
-				break
-			}
+		if positiveMap[fileName] {
+			numPositives++
+			log.Printf("Positive: %s, positives=%d", fileName, numPositives)
+			isSelected = "1"
+		} else if negativeMap[fileName] {
+			numNegatives++
+			log.Printf("Negative: %s, negatives=%d", fileName, numNegatives)
+			isSelected = "-1"
 		}
 
 		words := strings.Fields(body)
