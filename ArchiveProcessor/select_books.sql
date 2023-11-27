@@ -65,3 +65,12 @@ where
 
 
 
+-- 19:45 after initial matched bbooks
+    select BookId
+from libseq
+where
+    seqid IN (
+26874
+    )
+
+    

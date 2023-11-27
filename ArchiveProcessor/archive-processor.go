@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -38,6 +39,17 @@ type Data struct {
 }
 
 const N = 50000
+
+var FictionGenresPrefix = []string{
+	"sf", "popadancy", "litrpg", "russian_fantasy", "popadanec",
+	"modern_tale", "hronoopera", "child_sf", "love_sf"}
+
+const IgnoreNonFictionProbability = 0.75
+
+var outputCSVPath string
+var truncateToNumChars int
+var logFilePath string
+var zipFilePattern string
 
 // TruncateText truncates text to firstN characters.
 func TruncateText(s string, firstN int) string {
@@ -86,16 +98,15 @@ func ExtractBook(fb2 *zip.File) (Data, error) {
 
 	hasSf := false
 	for _, genre := range genres {
-		if strings.HasPrefix(genre.Text(), "sf") {
-			hasSf = true
-			break
-		} else if genre.Text() == "popadanec" || genre.Text() == "litrpg" {
-			hasSf = true
-			break
+		for _, prefix := range FictionGenresPrefix {
+			if strings.HasPrefix(genre.Text(), prefix) {
+				hasSf = true
+				break
+			}
 		}
 	}
 	if !hasSf {
-		if rand.Float32() < 0.75 {
+		if rand.Float32() < IgnoreNonFictionProbability {
 			return d, fmt.Errorf("random ignore")
 		}
 	}
@@ -123,7 +134,7 @@ func ExtractBook(fb2 *zip.File) (Data, error) {
 	}
 
 	text := body[0].FullText()
-	d.Body = TruncateText(text, N)
+	d.Body = TruncateText(text, truncateToNumChars)
 
 	ti := doc.FindAll("title-info")
 	if len(ti) != 1 {
@@ -166,8 +177,41 @@ func ExtractBook(fb2 *zip.File) (Data, error) {
 	return d, nil
 }
 
+func expandPatterns(pattern string) ([]string, error) {
+	var files []string
+	patterns := strings.Split(pattern, ",")
+
+	for _, p := range patterns {
+		matches, err := filepath.Glob(p)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, matches...)
+	}
+
+	return files, nil
+}
+
 func main() {
-	logFile, err := os.Create("app.log")
+	flag.StringVar(&outputCSVPath, "output", "", "Output file path")
+	flag.IntVar(&truncateToNumChars, "truncate_to", 10000, "Discard first N words")
+	flag.StringVar(&logFilePath, "log", "", "Log file path")
+	flag.StringVar(&zipFilePattern, "zip_files", "", "Zip file pattern")
+	flag.Parse()
+
+	if len(outputCSVPath) < 1 {
+		log.Fatal("Output file path is required")
+	}
+
+	if len(logFilePath) < 1 {
+		log.Fatal("Log file path is required")
+	}
+
+	if len(zipFilePattern) < 1 {
+		log.Fatal("Zip file pattern is required")
+	}
+
+	logFile, err := os.Create(logFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -179,11 +223,8 @@ func main() {
 	// Set log flags for date and time information
 	log.SetFlags(log.Ldate | log.Ltime)
 
-	// Get the path to the directory with zip files.
-	dir := os.Args[1]
-
 	// Create a new HDF file.
-	f, err := os.Create("data.json")
+	f, err := os.Create(outputCSVPath)
 	if err != nil {
 		panic(err)
 	}
@@ -193,14 +234,14 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	zipFiles, err := filepath.Glob(filepath.Join(dir, "*.zip"))
+	zipFiles, err := expandPatterns(zipFilePattern)
 	if err != nil {
 		panic(err)
 	}
 
 	log.Println("Found", len(zipFiles), "zip files")
 
-	for _, file := range zipFiles {
+	for n, file := range zipFiles {
 		fmt.Println(file)
 
 		r, err := zip.OpenReader(file)
@@ -209,7 +250,7 @@ func main() {
 		}
 
 		zippedFb2Files := r.File
-		fmt.Printf("Reading data from %s\n", file)
+		fmt.Printf("Processing file %d/%d: %s\n", n+1, len(zipFiles), file)
 		bar := pb.New(len(zippedFb2Files))
 
 		for _, fb2 := range zippedFb2Files {
