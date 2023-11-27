@@ -12,6 +12,7 @@ require (
 	github.com/anaskhan96/soup v1.2.5 // indirect
 	github.com/antchfx/xpath v0.0.0-20170515025933-1f3266e77307 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/go-sql-driver/mysql v1.7.1 // indirect
 	github.com/liderman/rustemmer v0.3.0 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
