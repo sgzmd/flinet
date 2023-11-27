@@ -20,11 +20,12 @@ var output string
 var discardFirstWords int
 var useFiles bool
 var positiveSamples string
+var negativesSamples string
 
-func getFiles() []string {
-	file, err := os.Open(positiveSamples)
+func getFiles(fileName string) []string {
+	file, err := os.Open(fileName)
 	if err != nil {
-		fmt.Printf("Error opening file %s: %v\n", positiveSamples, err)
+		fmt.Printf("Error opening file %s: %v\n", fileName, err)
 		os.Exit(1)
 	}
 	defer file.Close()
@@ -36,7 +37,7 @@ func getFiles() []string {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Printf("Error reading file %s: %v\n", positiveSamples, err)
+		fmt.Printf("Error reading file %s: %v\n", fileName, err)
 	}
 
 	return lines
@@ -48,6 +49,7 @@ func main() {
 	flag.IntVar(&discardFirstWords, "discard_first_words", 0,
 		"Number of first words to discard from body")
 	flag.StringVar(&positiveSamples, "positive_samples", "", "Positive samples file path")
+	flag.StringVar(&negativesSamples, "negative_samples", "", "Negatives sample file path")
 	flag.BoolVar(&useFiles, "use_files", true, "Use files for custom labelling")
 	flag.Parse()
 
@@ -89,7 +91,8 @@ func main() {
 		panic(err)
 	}
 
-	selectedFiles := getFiles()
+	positives := getFiles(positiveSamples)
+	negatives := getFiles(negativesSamples)
 	bar := pb.New(-1)
 
 	for scanner.Scan() {
@@ -123,10 +126,18 @@ func main() {
 		}
 
 		isSelected := "0"
-		for _, v := range selectedFiles {
+		for _, v := range positives {
 			if v+".fb2" == fileName {
-				print("Selected: " + fileName + "\n")
+				log.Printf("Positive: %s", fileName)
 				isSelected = "1"
+				break
+			}
+		}
+
+		for _, v := range negatives {
+			if v+".fb2" == fileName {
+				log.Printf("Negative: %s", fileName)
+				isSelected = "-1"
 				break
 			}
 		}
