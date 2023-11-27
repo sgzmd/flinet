@@ -114,9 +114,9 @@ func main() {
 				panic(err)
 			}
 
-			if relevanceTitle < 10 || relevanceAuthor < 8 {
-				continue
-			}
+			// if relevanceTitle < 10 || relevanceAuthor < 8 {
+			// 	continue
+			// }
 
 			// Write the result to the output CSV file
 			err = csvWriter.Write([]string{
