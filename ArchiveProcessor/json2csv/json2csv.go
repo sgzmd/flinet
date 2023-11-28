@@ -21,6 +21,7 @@ var useFiles bool
 var positiveSamples string
 var negativesSamples string
 var matchedPositivesOutput string
+var fieldsToExtract string
 
 type Task struct {
 	Body      string
@@ -30,8 +31,28 @@ type Task struct {
 
 type Result struct {
 	WorkedID        int
-	Fields          []string
+	Book            Book
 	MatchedPositive string
+}
+
+// Author represents the author of the book.
+type Author struct {
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+	MiddleName string `json:"middle_name"`
+	NickName   string `json:"nick_name"`
+}
+
+// Book represents the book details.
+type Book struct {
+	ID         string   `json:"id"`
+	Genre      []string `json:"genre"`
+	Author     []Author `json:"author"`
+	BookTitle  string   `json:"book_title"`
+	Body       string   `json:"body"`
+	Annotation string   `json:"annotation"`
+	FileName   string   `json:"file_name"`
+	IsSelected string   `json:"is_selected"`
 }
 
 func getFiles(fileName string) []string {
@@ -55,84 +76,64 @@ func getFiles(fileName string) []string {
 	return lines
 }
 
+// CSVRecord converts the Book struct into a slice of strings suitable for CSV
+// output.
+// TODO: keep in sync with CSVHeader
+func (b *Book) CSVRecord() []string {
+	authors := make([]string, 0, len(b.Author))
+	for _, author := range b.Author {
+		authors = append(authors, fmt.Sprintf("%s %s", author.FirstName, author.LastName))
+	}
+
+	return []string{
+		b.ID,
+		strings.Join(b.Genre, ";"),
+		strings.Join(authors, ";"),
+		b.BookTitle,
+		b.Body,
+		b.Annotation,
+		b.FileName,
+		b.IsSelected,
+	}
+}
+
+// CSVHeader returns the header for the CSV file.
+// TODO: keep in sync with Book.CSVRecord
+func CSVHeader() []string {
+	return []string{
+		"ID",
+		"Genres",
+		"Authors",
+		"BookTitle",
+		"Body",
+		"Annotation",
+		"FileName",
+		"IsSelected",
+	}
+}
+
 func processLine(id int, tasks <-chan Task, results chan<- Result, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for task := range tasks {
-		var jsonObj map[string]interface{}
-		line := task.Body
-		err := json.Unmarshal([]byte(line), &jsonObj)
+		var book Book
+		err := json.Unmarshal([]byte(task.Body), &book)
 		if err != nil {
-			if len(line) > 100 {
-				line = line[:100]
-			}
-			log.Printf("Error parsing line: %s because %+v", line, err)
+			log.Printf("Error parsing line: %s because %+v", task.Body, err)
 			continue
 		}
 
-		body, ok := jsonObj["body"].(string)
-		if !ok {
-			log.Println("Error: body is not a string")
-			continue
+		book.IsSelected = "0"
+		if task.Positives[book.FileName] {
+			log.Printf("Positive: %s", book.FileName)
+			book.IsSelected = "1"
+		} else if task.Negatives[book.FileName] {
+			log.Printf("Negative: %s", book.FileName)
+			book.IsSelected = "-1"
 		}
-
-		annotation, ok := jsonObj["annotation"].(string) // Get the "annotation" field
-		if !ok {
-			annotation = "" // Set a default value if "annotation" is not present
-		}
-
-		fileName, ok := jsonObj["file_name"].(string)
-		if !ok {
-			log.Println("Error: file_name is not a string")
-			continue
-		}
-
-		isSelected := "0"
-		if task.Positives[fileName] {
-			log.Printf("Positive: %s", fileName)
-			isSelected = "1"
-		} else if task.Negatives[fileName] {
-			log.Printf("Negative: %s", fileName)
-			isSelected = "-1"
-		}
-
-		words := strings.Fields(body)
-		if len(words) > discardFirstWords {
-			words = words[discardFirstWords:]
-		}
-		body = strings.Join(words, " ")
-
-		genreInterface, ok := jsonObj["genre"].([]interface{})
-		if !ok {
-			log.Println("Error: genre is not a list of strings")
-			continue
-		}
-
-		genre := make([]string, len(genreInterface))
-		for i, v := range genreInterface {
-			genre[i], ok = v.(string)
-			if !ok {
-				log.Println("Error: genre element is not a string")
-				continue
-			}
-		}
-
-		bodyWithAnnotation := annotation + " " + body // Concatenate "annotation" with "body"
-
-		fields := []string{
-			bodyWithAnnotation,
-			strings.Join(genre, ","),
-			isSelected,
-			fileName}
 
 		result := Result{
 			WorkedID: id,
-			Fields:   fields,
-		}
-
-		if isSelected == "1" {
-			result.MatchedPositive = fileName
-		} else {
-			result.MatchedPositive = ""
+			Book:     book,
 		}
 
 		results <- result
@@ -183,7 +184,7 @@ func main() {
 
 	writer := csv.NewWriter(csvFile)
 	defer writer.Flush()
-	err = writer.Write([]string{"body", "genre", "selected", "file_name"}) // Remove "annotation" from the header
+	err = writer.Write(CSVHeader())
 	if err != nil {
 		panic(err)
 	}
@@ -233,12 +234,12 @@ func main() {
 	matchedPositives := make([]string, 0)
 	// bar := pb.New(len(results))
 	for result := range results {
-		err := writer.Write(result.Fields)
+		err := writer.Write(result.Book.CSVRecord())
 		if err != nil {
 			panic(err)
 		}
-		if result.MatchedPositive != "" {
-			matchedPositives = append(matchedPositives, result.MatchedPositive)
+		if result.Book.IsSelected == "1" {
+			matchedPositives = append(matchedPositives, result.Book.FileName)
 		}
 	}
 
