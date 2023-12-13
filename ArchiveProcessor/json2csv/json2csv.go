@@ -66,7 +66,9 @@ func getFiles(fileName string) []string {
 	var lines []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+		text := scanner.Text()
+		text = strings.TrimSpace(text)
+		lines = append(lines, text)
 	}
 
 	if err := scanner.Err(); err != nil {
