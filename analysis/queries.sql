@@ -51,28 +51,29 @@ WHERE
   and match(FirstName, LastName, MiddleName, NickName) AGAINST('Василий Криптонов' in natural language mode);
 
 
-
-
 DROP VIEW IF EXISTS TopRatedDetectedBooks;
 
 CREATE VIEW `TopRatedDetectedBooks` AS
 SELECT
   `b`.`BookId` AS `bookId`,
+  b.PredictionScore, 
   `lb`.`Title` AS `Title`,
-  REPLACE(b.Annotation, '\n', '') AS Annotation, -- Replace new lines in Annotation
+  REPLACE(b.Annotation, '\n', '') AS Annotation,
+  -- Replace new lines in Annotation
   b.Authors,
-  count(0) AS `NumRecs`
+  count(0) AS `NumRecs`,
+  GROUP_CONCAT(DISTINCT gl.GenreCode) AS Genre
 FROM
-  (
-    (
-      `DetectedBooks` `b`
-      join `libbook` `lb`
-    )
-    join `librecs` `lr`
-  )
+  `DetectedBooks` `b`,
+  `libbook` `lb`,
+  `librecs` `lr`,
+  libgenre g,
+  libgenrelist gl
 WHERE
   `lb`.`BookId` = `b`.`BookId`
   AND `lr`.`bid` = `b`.`BookId`
+  AND g.BookId = b.BookId
+  AND gl.GenreId = g.GenreId
 GROUP BY
   `b`.`BookId`,
   `lb`.`Title`
